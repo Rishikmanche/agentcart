@@ -139,7 +139,6 @@ npm run shopify:seed
 npm run dev
 ```
 
-- **Demo Video**: [Watch 5-Minute Hackathon Demo on Google Drive](https://drive.google.com/file/d/1xZN6sp6dMSeaKWn6Pp5uAVC2v3Yfo86i/view?usp=sharing)
 - **Buyer Workspace**: [http://localhost:3000](http://localhost:3000)
 - **Merchant Console**: [http://localhost:3000/merchant](http://localhost:3000/merchant)
 - **Interactive Swagger UI (Web)**: [http://localhost:3000/docs](http://localhost:3000/docs)
