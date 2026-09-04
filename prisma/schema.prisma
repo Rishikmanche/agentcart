@@ -1,0 +1,210 @@
+// Prisma Schema for AgentCart — AI Buyer Infrastructure
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Merchant {
+  id          String    @id @default(cuid())
+  name        String
+  domain      String    @unique
+  currency    String    @default("INR")
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products    Product[]
+  orders      Order[]
+
+  @@map("merchants")
+}
+
+model Product {
+  id                String      @id @default(cuid())
+  externalId        String?     @unique
+  shopifyProductId  String?     @unique
+  shopifyVariantId  String?
+  title             String
+  description       String      @db.Text
+  category          String
+  brand             String
+  price             Decimal     @db.Decimal(10, 2)
+  currency          String      @default("INR")
+  imageUrl          String
+  attributes        Json        @default("{}")
+  inStock           Boolean     @default(true)
+  merchantId        String
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  merchant          Merchant    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  inventory         Inventory?
+  orderItems        OrderItem[]
+
+  @@index([category])
+  @@index([brand])
+  @@index([price])
+  @@map("products")
+}
+
+model Inventory {
+  id                String    @id @default(cuid())
+  productId         String    @unique
+  availableQuantity Int       @default(0)
+  reservedQuantity  Int       @default(0)
+  updatedAt         DateTime  @updatedAt
+
+  product           Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("inventory")
+}
+
+model Customer {
+  id            String         @id @default(cuid())
+  email         String?        @unique
+  name          String?
+  phone         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  orders        Order[]
+  agentSessions AgentSession[]
+
+  @@map("customers")
+}
+
+enum OrderStatus {
+  CREATED
+  PENDING_APPROVAL
+  APPROVED
+  PAYMENT_INITIATED
+  PAID
+  CONFIRMED
+  FAILED
+  CANCELLED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Order {
+  id              String          @id @default(cuid())
+  customerId      String?
+  merchantId      String
+  status          OrderStatus     @default(CREATED)
+  approvalStatus  ApprovalStatus  @default(PENDING)
+  currency        String          @default("INR")
+  subtotal        Decimal         @db.Decimal(10, 2)
+  total           Decimal         @db.Decimal(10, 2)
+  maxOrderValue   Decimal?        @db.Decimal(10, 2)
+  intentPrompt    String?         @db.Text
+  notes           String?         @db.Text
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  merchant        Merchant        @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  customer        Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items           OrderItem[]
+  payments        Payment[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id                String    @id @default(cuid())
+  orderId           String
+  productId         String
+  shopifyVariantId  String?
+  title             String
+  unitPrice         Decimal   @db.Decimal(10, 2)
+  quantity          Int       @default(1)
+  total             Decimal   @db.Decimal(10, 2)
+  createdAt         DateTime  @default(now())
+
+  order             Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product           Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@map("order_items")
+}
+
+enum PaymentStatus {
+  PENDING
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  orderId           String
+  razorpayOrderId   String?       @unique
+  razorpayPaymentId String?       @unique
+  razorpaySignature String?
+  status            PaymentStatus @default(PENDING)
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("INR")
+  webhookEventId    String?       @unique
+  verifiedAt        DateTime?
+  failureReason     String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("payments")
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model AgentSession {
+  id          String        @id @default(cuid())
+  customerId  String?
+  intent      String?       @db.Text
+  status      SessionStatus @default(ACTIVE)
+  metadata    Json          @default("{}")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  customer    Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  actions     AgentAction[]
+
+  @@map("agent_sessions")
+}
+
+enum ActionStatus {
+  SUCCESS
+  FAILED
+  WAITING_APPROVAL
+}
+
+model AgentAction {
+  id          String        @id @default(cuid())
+  sessionId   String
+  step        Int           @default(1)
+  tool        String
+  input       Json          @default("{}")
+  output      Json          @default("{}")
+  decision    String?       @db.Text
+  status      ActionStatus  @default(SUCCESS)
+  timestamp   DateTime      @default(now())
+
+  session     AgentSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, timestamp])
+  @@map("agent_actions")
+}
