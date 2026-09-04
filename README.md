@@ -93,8 +93,8 @@ flowchart LR
 
 ### 2. Clone & Install Dependencies
 ```bash
-git clone https://github.com/your-username/agentcart.git
-cd razorpay
+git clone https://github.com/rishikmanche/agentcart.git
+cd agentcart
 npm install
 ```
 
@@ -139,9 +139,12 @@ npm run shopify:seed
 npm run dev
 ```
 
+- **Demo Video**: [Watch 5-Minute Hackathon Demo on Google Drive](https://drive.google.com/file/d/1xZN6sp6dMSeaKWn6Pp5uAVC2v3Yfo86i/view?usp=sharing)
 - **Buyer Workspace**: [http://localhost:3000](http://localhost:3000)
 - **Merchant Console**: [http://localhost:3000/merchant](http://localhost:3000/merchant)
-- **Fastify API Health**: [http://localhost:4000/health](http://localhost:4000/health)
+- **Interactive Swagger UI (Web)**: [http://localhost:3000/docs](http://localhost:3000/docs)
+- **Fastify OpenAPI Explorer**: [http://localhost:4000/docs](http://localhost:4000/docs)
+- **API Health Check**: [http://localhost:4000/health](http://localhost:4000/health)
 
 ---
 
